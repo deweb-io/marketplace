@@ -1,0 +1,58 @@
+{
+  "name": "BBS Marketplace Plugin",
+  "version": "0.0.1",
+  "description": "A plugin for a decentralized marketplace over the BBS network",
+  "exports": {
+    "./": "./src/"
+  },
+  "scripts": {
+    "refresh-db": "node -e '(async() => {await require(\"./src/db.cjs\").refreshDatabase(); process.exit(0);})()'",
+    "lint": "npx eslint ./src/*.cjs ./deployment/*.cjs ./site/*.js",
+    "test": "npx mocha --exit ./src/test.cjs",
+    "coverage": "npx c8 --100 --exclude src/test.cjs npm run test",
+    "serve": "npx fastify start ./src/routes.cjs",
+    "start": "npm run lint && npm run coverage && npm run serve",
+    "dev": "sh -c 'FASTIFY_LOG_LEVEL=debug FASTIFY_WATCH=true FASTIFY_SWAGGER=true npm --node-options --inspect run serve'"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deweb-io/marketplace.git"
+  },
+  "keywords": [
+    "BBS",
+    "message-board",
+    "social",
+    "marketplace",
+    "bazar",
+    "decentralized"
+  ],
+  "author": "Israel Levin",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/deweb-io/marketplace/issues"
+  },
+  "homepage": "https://github.com/deweb-io/marketplace#readme",
+  "private": false,
+  "devDependencies": {
+    "@fastify/swagger": "^8.10.0",
+    "@fastify/swagger-ui": "^1.9.3",
+    "c8": "^8.0.1",
+    "chai": "^4.3.8",
+    "eslint": "^8.49.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-plugin-import": "^2.28.1",
+    "mocha": "^10.2.0"
+  },
+  "dependencies": {
+    "@fastify/cors": "^8.3.0",
+    "axios": "^1.5.0",
+    "dotenv": "^16.3.1",
+    "fast-jwt": "^3.2.0",
+    "fastify": "^4.22.2",
+    "fastify-cli": "^5.8.0",
+    "postgres": "^3.3.5"
+  }
+}

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>For-Sale Item Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+</head>
+<body>
+    <div id="premium"></div>
+    <script>
+        // Load the UI like a Core-UI and a boss.
+        const load = (rendererUrl, authToken) => {
+            // Load premium.js and mount it as a SSPA package, with the `premium` div and the `authToken` as parameters.
+            requirejs([rendererUrl], (premium) => {
+                premium.mount({domElement: document.getElementById('premium'), authToken});
+            });
+        }
+
+        // Allow auth token and slug to be passed in as a query parameter for easy testing.
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.has('slug') && urlParams.has('authToken')) {
+            load(`/product/${urlParams.get('slug')}` , urlParams.get('authToken'));
+        }
+    </script>
+</body>
+</html>
