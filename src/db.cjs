@@ -40,4 +40,34 @@ const refreshDatabase = async() => {
 // Report database connection and health.
 const health = async() => await psql`SELECT 1 FROM items LIMIT 1` && 'OK';
 
-exports = module.exports = {psql, refreshDatabase, health};
+// Get item details.
+const getItem = async(itemId) => (await psql`SELECT * FROM items WHERE id = ${itemId}`)[0];
+
+// Get list of items for a user in a community.
+const getItems = async(community, user) => (
+    await psql`SELECT * FROM items WHERE community = ${community} AND publisher = ${user}`
+);
+
+// Create a new item (creating the user if needed).
+const createItem = async(community, user, price, description) => {
+    await psql`INSERT INTO users (id, details) VALUES (${user}, '{}') ON CONFLICT DO NOTHING;`;
+    return await psql`
+        INSERT INTO items (publisher, community, price, description)
+        VALUES (${user}, ${community}, ${price}, ${description})
+        RETURNING id;`;
+};
+
+// Update item status.
+const updateItem = async(itemId, user, status) => await psql`
+    UPDATE items SET status = ${status} WHERE id = ${itemId} AND publisher = ${user};
+`;
+
+exports = module.exports = {
+    createItem,
+    getItem,
+    getItems,
+    health,
+    psql,
+    refreshDatabase,
+    updateItem
+};

@@ -13,7 +13,7 @@ The Service integration requires the following:
 * Mount the custom rendering of for-sale item posts from the plugin server
 * Create and hide posts on the user's behalf from the plugin tab (this should happen via our bbs-common library)
 
-Both our UI's (the index page and custom renderings of for-sale items) are served as Single SPA parcels. The Web app already has the ability to mount Single SPA parcels, and the mobile app will require a thin adapter layer, basically a bare HTML which can mount a Single SPA parcel - there may be a flutter plugin that already does that, and a working example can be found at `/site/dev.html`. TODO: This is not yet functional and has traces of the premium service.
+Both our UI's (the index page and custom renderings of for-sale items) are served as Single SPA parcels. The Web app already has the ability to mount Single SPA parcels, and the mobile app will require a thin adapter layer, basically a bare HTML which can mount a Single SPA parcel - there may be a flutter plugin that already does that, and a working example can be found at `/site/dev.html`.
 
 In order for the Service to authenticate the BBS user running the Core UI, the UI parcel requires access to the signed Firebase auth token. This token has to be passed to the UI as a parameter to the `mount` function call (this means adding it to Single SPA's props).
 
@@ -21,11 +21,15 @@ In order for the Service to authenticate the BBS user running the Core UI, the U
 
 The service exposes the following endpoints:
 * `GET:/health` - checks if everything is fine and dandy, so the Core UI can disable the plugin if the service is unhealthy and possibly notify the user
-* `GET:/community/<community>` - returns a Single SPA compatible JS package (an AMD module which defines the Single SPA lifecycle stages) that deploys an interface for creating and modifying for-sale items of the current user in the given community.
+* `GET:/items/<community>` - returns a Single SPA compatible JS package (an AMD module which defines the Single SPA lifecycle stages) that deploys an interface for creating and modifying for-sale items of the current user in the given community.
+* `GET:/item/<item ID>` - returns a Single SPA compatible JS package (an AMD module which defines the Single SPA lifecycle stages) that deploys an interface for viewing and interacting with a specific for-sale item.
+* `POST:/items/<community>` - returns details for the items of the current user in the given community.
+* `POST:/item/<item ID>` - returns the details of a specific item.
+* `POST:/items/<community>/new` - creates a new item for the current user in the specified community.
+* `POST:/item/<item ID>/update` - update the status of the specified item of the current user.
 * `GET:/site/<path>` - serves static assets for convenience when developing (will get removed in production)
 
-### Flows
-TBD
+Note that only the first three endpoints are used by the core UI, while all the others are for internal use, i.e. they are only called from the parcels loaded by the previous endpoints.
 
 ## Running the Service Locally
 
@@ -35,12 +39,13 @@ Create an `.env` file with some basic params:
 * `FASTIFY_ADDRESS`                 - Host to serve from (defaults to 127.0.0.1)
 * `FASTIFY_PORT`                    - Port to serve from (defaults to 8000)
 * `FASTIFY_SWAGGER`                 - Serve swagger-UI from `/doc` (defaults to false)
-* `JWT_CERTS_URL`                   - URL for the public keys of the store module authenticaion JWT (for Firebase tokens this is usually `https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com`)
-* `PGHOST`                          - Postgres host (defaults to localhost)
-* `PGPORT`                          - Postgres port (defualts to 5432)
 * `PGDATABASE`                      - Postgres database (schema) name (defaults to postgres)
-* `PGUSERNAME`                      - Postgres user name (defaults to user running the process)
+* `PGHOST`                          - Postgres host (defaults to localhost)
 * `PGPASSWORD`                      - Postgres user password (defaults to no-password)
+* `PGPORT`                          - Postgres port (defualts to 5432)
+* `PGUSERNAME`                      - Postgres user name (defaults to user running the process)
+* `PLUGIN_SERVICE_ENDPOINT`         - REQUIRED: The base URL of the plugin service
+* `JWT_CERTS_URL`                   - REQUIRED: The URL for the public keys of the store module authenticaion JWT (for Firebase tokens this is usually `https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com`)
 
 ```sh
 npm install         # Install dependencies
@@ -53,7 +58,7 @@ npm run start       # Run the Web server in production mode (with all checks)
 npm run dev         # Run the Web server in debug mode (node-inspector, auto reload and swagger enabled)
 ```
 
-Once you run a server, you can access `/site/dev.html?community=<community>&authToken=<valid Firebase auth token>` which loads the UI as a Single SPA component. To assist development, you may want to set your `JWT_POLICY` environment variable to `'fake'`. This will result in accepting any string as a valid and signed JWT. The username associated (the user's unique blockchain ID) will be the JWT string itself (so the link above turns into `/site/dev.html?community=<community>&authToken=<user ID>`).
+Once you run a server, you can access `/site/dev.html?community=<community>&authToken=<valid Firebase auth token>` which loads the UI as a Single SPA component. To assist development, you may want to set your `JWT_POLICY` environment variable to `'fake'`. This will result in accepting any string as a valid and signed JWT. The username associated (the user's unique blockchain ID) will be the JWT string itself (so the link above turns into `/site/dev.html?community=<community>&authToken=<user ID>`). You can also use it to view the rendering of a single item with `/site/dev.html?item=<item ID>&authToken=<valid Firebase auth token>`.
 
 Also note that while we usually use `fastify-cli` to launch the server, there is also a minimal script to launches it at `/src/launch.cjs`. It can come in handy when you are trying to isolate problems and for conveniently running a debugger from your IDE.
 

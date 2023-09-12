@@ -1,0 +1,85 @@
+// Intex parcel for Marketplace service plugin for BBS Core-UI.
+(async() => {
+    // This will be replaced by the server.
+    const community = null;
+    if(!community) throw new Error('community is not defined');
+
+    const pluginServer = null;
+    if(!pluginServer) throw new Error('pluginServer is not defined');
+
+    const getItems = async(authToken) => {
+        const indexData = await (await fetch(`${pluginServer}/items/${community}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({authToken})
+        })).json();
+        let html = `<h1>Items of ${indexData.user} in ${community}</h1><ul>`;
+        for(const item of indexData.items) {
+            html += `<li>${item.id}: ${item.description.name} - ${item.price} - <select name="status">
+                <option value="created"${item.status === 'created' ? 'selected' : ''}>for sale</option>
+                <option value="sold"${item.status === 'sold' ? 'selected' : ''}>sold</option>
+                <option value="deleted"${item.status === 'deleted' ? 'selected' : ''}>deleted</option>
+            </select></li>`;
+        }
+        html += `</ul><form>
+            <input type="text" name="name" placeholder="name">
+            <input type="text" name="price" placeholder="price">
+            <input type="submit" value="Create">
+        </form>`;
+        return html;
+    };
+
+    const createItem = async(authToken, price, item) => await fetch(`${pluginServer}/items/${community}/new`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({authToken, price, item})
+    });
+
+    // Show the index UI in the given domElement.
+    const show = async(domElement, authToken) => {
+        try {
+            const ui = document.createElement('div');
+            ui.innerHTML = await getItems(authToken);
+            domElement.appendChild(ui);
+
+            // Bind set status dropdown.
+            [...ui.getElementsByTagName('select')].forEach(
+                (select) => select.addEventListener('change', async(event) => {
+                    const item = event.target.parentElement.textContent.split(':')[0];
+                    await fetch(`${pluginServer}/item/${item}/update`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({authToken, status: event.target.value})
+                    });
+                })
+            );
+
+            // Bind new item form.
+            ui.getElementsByTagName('form')[0].addEventListener('submit', async(event) => {
+                event.preventDefault();
+                await createItem(authToken, event.target.price.value, {name: event.target.name.value});
+                ui.innerHTML = await getItems(authToken);
+            });
+        } catch(error) {
+            console.error(error);
+            domElement.textContent = error.message;
+            throw error;
+        }
+    };
+
+    // Define Single SPA lifecycle entry points as AMD modules.
+    define({
+        mount: async(sspaArgs) => new Promise((resolve, reject) => {
+            try {
+                show(sspaArgs.domElement, sspaArgs.authToken).then(resolve).catch(reject);
+            } catch(error) {
+                console.error(error);
+                sspaArgs.domElement.textContent = error.message;
+                reject(error);
+            }
+        }),
+        // We are not currently using these lifecycle functions but they are required by Single SPA.
+        bootstrap: async() => {},
+        unmount: async() => {}
+    });
+})();

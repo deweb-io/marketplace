@@ -1,0 +1,44 @@
+// Item parcel for Marketplace service plugin for BBS Core-UI.
+(async() => {
+    // This will be replaced by the server.
+    const item = null;
+    if(!item) throw new Error('community is not defined');
+
+    const pluginServer = null;
+    if(!pluginServer) throw new Error('pluginServer is not defined');
+
+    // Show the for-sale item UI in the given domElement.
+    const show = async(domElement, authToken) => {
+        try {
+            const itemDetails = await (await fetch(`${pluginServer}/item/${item}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({authToken})
+            })).json();
+            if(itemDetails.error) throw new Error(itemDetails.error);
+            const ui = document.createElement('div');
+            ui.innerHTML = JSON.stringify(itemDetails);
+            domElement.appendChild(ui);
+        } catch(error) {
+            console.error(error);
+            domElement.textContent = error.message;
+            throw error;
+        }
+    };
+
+    // Define Single SPA lifecycle entry points as AMD modules.
+    define({
+        mount: async(sspaArgs) => new Promise((resolve, reject) => {
+            try {
+                show(sspaArgs.domElement, sspaArgs.authToken).then(resolve).catch(reject);
+            } catch(error) {
+                console.error(error);
+                sspaArgs.domElement.textContent = error.message;
+                reject(error);
+            }
+        }),
+        // We are not currently using these lifecycle functions but they are required by Single SPA.
+        bootstrap: async() => {},
+        unmount: async() => {}
+    });
+})();
